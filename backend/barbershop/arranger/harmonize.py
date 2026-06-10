@@ -49,6 +49,9 @@ def _static_cost(cand: _Candidate, slot: Slot, cfg: ArrangerConfig, *, forced: b
     if cand.quality in _DOM_FAMILY:
         cost += cfg.w_dom_bias
 
+    if slot.swipe and cand.root_pc == inp.root_pc and cand.quality == inp.quality:
+        cost += 1.5  # a swipe slot wants the harmony to move under the hold
+
     if cand.root_pc == inp.root_pc:
         if cand.quality != inp.quality:
             cost += cfg.w_same_root_upgrade
@@ -62,11 +65,34 @@ def _static_cost(cand: _Candidate, slot: Slot, cfg: ArrangerConfig, *, forced: b
     return cost
 
 
+def _seventh_resolution_feasible(prev: _Candidate, cur: _Candidate, slot: Slot) -> bool:
+    """Joint chord-voicing feasibility: a chord with a true 7th may only be
+    followed by a chord where that 7th can resolve down by step, hold as a
+    common tone (predominant 7ths), or hand its resolution to the lead."""
+    if prev.quality == "dim7":  # symmetric, no functional 7th
+        return True
+    seventh_iv = next(
+        (iv for iv, d in CHORDS[prev.quality].degrees.items() if d == "seventh"), None
+    )
+    if seventh_iv is None:
+        return True  # triads/6ths: nothing to resolve
+    seventh_pc = (prev.root_pc + seventh_iv) % 12
+    next_pcs = chord_pcs(cur.root_pc, cur.quality)
+    targets = {(seventh_pc - 1) % 12, (seventh_pc - 2) % 12} & next_pcs
+    if targets:
+        return True  # a trio voice can step down (or transfer to the lead)
+    if prev.quality in ("min7", "halfdim7") and seventh_pc in next_pcs:
+        return True  # common-tone hold
+    return False
+
+
 def _transition_cost(
     prev: _Candidate, cur: _Candidate, prev_slot: Slot, slot: Slot, cfg: ArrangerConfig
 ) -> float:
     cost = 0.0
     same_chord = prev == cur
+    if not same_chord and not _seventh_resolution_feasible(prev, cur, slot):
+        cost += 50.0  # no legal voice-leading exists; only as a last resort
     descending_fifth = (prev.root_pc - 7) % 12 == cur.root_pc
     if descending_fifth and not same_chord:
         cost -= cfg.w_circle

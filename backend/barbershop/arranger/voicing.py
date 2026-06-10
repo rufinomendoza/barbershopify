@@ -89,8 +89,8 @@ def candidates(slot: Slot, cfg: ArrangerConfig, *, is_final: bool) -> list[tuple
             bari_pc = (chord.root_pc + bari_iv) % 12
             tenor_pc = (chord.root_pc + tenor_iv) % 12
             for bass in _pitches_for(bass_pc, *RANGES["bass"]):
-                if bass > slot.melody_midi:
-                    continue
+                if bass > slot.melody_min_midi:
+                    continue  # the bass stays under the lead, filigree included
                 for tenor in _pitches_for(tenor_pc, *RANGES["tenor"]):
                     if tenor < slot.melody_max_midi:
                         continue  # tenor stays above the lead, filigree included

@@ -39,6 +39,7 @@ interface AppState {
   playing: boolean
   currentTick: number | null
   tempoBpm: number
+  tuning: 'just' | 'equal'
   voiceSettings: Record<VoiceName, VoiceSettings>
 
   selected: Selection | null
@@ -57,6 +58,7 @@ interface AppState {
   pause: () => void
   stop: () => void
   setTempo: (bpm: number) => void
+  setTuning: (tuning: 'just' | 'equal') => void
   toggleMute: (voice: VoiceName) => void
   toggleSolo: (voice: VoiceName) => void
   setVolume: (voice: VoiceName, db: number) => void
@@ -133,6 +135,7 @@ export const useStore = create<AppState>((set, get) => {
     playing: false,
     currentTick: null,
     tempoBpm: 100,
+    tuning: 'just',
     voiceSettings: defaultVoiceSettings(),
 
     selected: null,
@@ -190,6 +193,11 @@ export const useStore = create<AppState>((set, get) => {
     setTempo: (bpm) => {
       engine.setTempo(bpm)
       set({ tempoBpm: bpm })
+    },
+
+    setTuning: (tuning) => {
+      engine.tuning = tuning
+      set({ tuning })
     },
 
     toggleMute: (voice) => {

@@ -18,11 +18,13 @@ class Slot:
     duration: int
     melody_midi: int  # sounding melody pitch at slot start
     melody_max_midi: int  # highest lead pitch sounding during the slot
+    melody_min_midi: int  # lowest lead pitch sounding during the slot
     melody_last_midi: int  # lead pitch sounding just before slot end
     melody_attack: bool  # lead attacks at slot start (False = chord moves under a hold)
     chord: ChordSpan
     structural: bool  # melody pitch must be a chord tone of this slot's chord
     phrase_end: bool
+    swipe: bool = False  # harmony should move under the held lead here
 
     @property
     def end(self) -> int:
@@ -90,6 +92,7 @@ def segment(melody: list[Note], chords: list[ChordSpan], threshold: int) -> list
         assert note is not None
         sounding = [n for n in melody if n.onset < end and n.end > t]
         peak = max(n.midi for n in sounding)
+        floor = min(n.midi for n in sounding)
         last = max(sounding, key=lambda n: n.onset).midi
         slots.append(
             Slot(
@@ -97,6 +100,7 @@ def segment(melody: list[Note], chords: list[ChordSpan], threshold: int) -> list
                 duration=end - t,
                 melody_midi=note.midi,
                 melody_max_midi=peak,
+                melody_min_midi=floor,
                 melody_last_midi=last,
                 melody_attack=boundaries[t],
                 chord=_chord_at(chords, t),

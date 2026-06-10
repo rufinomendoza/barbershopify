@@ -17,10 +17,15 @@ def test_lead_is_melody_verbatim_modulo_transposition(demo):
     lead = score.voices[VoiceName.lead]
     assert len(lead) == len(demo.melody)
     shift = lead[0].midi - demo.melody[0].midi
-    for got, want in zip(lead, demo.melody):
+    for i, (got, want) in enumerate(zip(lead, demo.melody)):
         assert got.onset == want.onset
-        assert got.duration == want.duration
         assert got.midi == want.midi + shift
+        if i < len(lead) - 1:
+            assert got.duration == want.duration
+        else:
+            # the only sanctioned rhythm change: the tag may sustain the
+            # final note longer (pitch still verbatim)
+            assert got.duration >= want.duration
 
 
 def test_all_voices_inhabit_their_ranges(demo):

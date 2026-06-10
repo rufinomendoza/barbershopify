@@ -3,8 +3,10 @@
 // without rescheduling. Each voice is a warm, vocal-ish mono chain
 // (detuned saws -> lowpass -> channel with mute/solo/volume/pan).
 import * as Tone from 'tone'
-import { midiToHz } from './freq'
-import type { Score, VoiceName } from '../types'
+import { justHz, midiToHz, type ChordRef } from './freq'
+import type { ChordSpan, Score, VoiceName } from '../types'
+
+export type TuningMode = 'just' | 'equal'
 
 export const VOICE_ORDER: VoiceName[] = ['tenor', 'lead', 'bari', 'bass']
 
@@ -34,6 +36,21 @@ export class PlaybackEngine {
   private chains = new Map<VoiceName, VoiceChain>()
   private callbacks: EngineCallbacks | null = null
   private started = false
+  private chords: ChordSpan[] = []
+  tuning: TuningMode = 'just' // the barbershop default; toggle is live
+
+  private chordAt(tick: number): ChordRef | null {
+    for (const c of this.chords) {
+      if (c.onset <= tick && tick < c.onset + c.duration) return c
+    }
+    return null
+  }
+
+  private hzFor(voice: VoiceName, midi: number, tick: number): number {
+    // the lead holds the ET pitch center; harmony voices tune into the chord
+    if (this.tuning === 'equal' || voice === 'lead') return midiToHz(midi)
+    return justHz(midi, this.chordAt(tick))
+  }
 
   private transport() {
     return Tone.getTransport()
@@ -56,6 +73,7 @@ export class PlaybackEngine {
     this.stop()
     this.transport().cancel(0)
     this.transport().bpm.value = score.tempo
+    this.chords = score.chords
 
     const onsets = new Set<number>()
     let totalTicks = 0
@@ -65,9 +83,11 @@ export class PlaybackEngine {
         onsets.add(note.onset)
         totalTicks = Math.max(totalTicks, note.onset + note.duration)
         this.transport().schedule((time) => {
-          // resolve duration at fire time so live tempo changes apply
+          // duration and tuning resolve at fire time, so live tempo
+          // changes and the just/equal toggle apply mid-playback
           const seconds = Tone.Time(`${note.duration - 8}i`).toSeconds()
-          chain.synth.triggerAttackRelease(midiToHz(note.midi), seconds, time)
+          const hz = this.hzFor(voice, note.midi, note.onset)
+          chain.synth.triggerAttackRelease(hz, seconds, time)
         }, `${note.onset}i`)
       }
     }

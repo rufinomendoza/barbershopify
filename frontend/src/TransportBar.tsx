@@ -9,8 +9,8 @@ const VOICE_LABELS: Record<string, string> = {
 }
 
 export function TransportBar() {
-  const { playing, tempoBpm, voiceSettings, stage } = useStore()
-  const { play, pause, stop, setTempo, toggleMute, toggleSolo, setVolume } = useStore()
+  const { playing, tempoBpm, tuning, voiceSettings, stage } = useStore()
+  const { play, pause, stop, setTempo, setTuning, toggleMute, toggleSolo, setVolume } = useStore()
 
   if (stage !== 'ready') return null
 
@@ -40,6 +40,21 @@ export function TransportBar() {
           aria-label="Tempo"
         />
       </label>
+
+      <div className="tuning-toggle" title="Just intonation tunes each chord to pure ratios over its root — listen to the locked dominant 7ths">
+        <button
+          className={tuning === 'just' ? 'chip active solo' : 'chip'}
+          onClick={() => setTuning('just')}
+        >
+          JUST
+        </button>
+        <button
+          className={tuning === 'equal' ? 'chip active' : 'chip'}
+          onClick={() => setTuning('equal')}
+        >
+          EQUAL
+        </button>
+      </div>
 
       <div className="mixer">
         {VOICE_ORDER.map((voice) => {

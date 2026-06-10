@@ -444,6 +444,17 @@ body {
   accent-color: var(--red-bright);
 }
 
+.tuning-toggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tuning-toggle .chip {
+  width: auto;
+  padding: 0 0.5rem;
+  letter-spacing: 0.08em;
+}
+
 .mixer {
   display: flex;
   gap: 1.1rem;
