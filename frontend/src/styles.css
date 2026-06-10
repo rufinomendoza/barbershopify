@@ -1,0 +1,281 @@
+/* barbershopify — vintage music-hall playbill.
+   Cream paper, ink black, barbershop-pole red, brass gold.
+   The engraved score is the star; everything else frames it. */
+
+:root {
+  --paper: #f4ecdd;
+  --paper-deep: #e9ddc6;
+  --ink: #211b14;
+  --ink-soft: #5a4f40;
+  --red: #a8262a;
+  --red-bright: #c43a3e;
+  --brass: #a8842c;
+  --sheet: #fdfaf2;
+  --font-display: 'Limelight', serif;
+  --font-body: 'Crimson Pro', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100vh;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  /* faint paper grain */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.hall {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- marquee header ---------- */
+
+.marquee {
+  text-align: center;
+  padding: 1.6rem 1rem 0;
+}
+
+.marquee h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink);
+  text-shadow:
+    1px 1px 0 var(--paper-deep),
+    3px 3px 0 rgba(168, 38, 42, 0.35);
+}
+
+.tagline {
+  margin: 0.2rem 0 1rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+}
+
+.pole-stripe {
+  height: 10px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--red) 0 14px,
+    var(--sheet) 14px 28px,
+    #2c4a6e 28px 42px,
+    var(--sheet) 42px 56px
+  );
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+
+/* ---------- floor layout ---------- */
+
+.floor {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 1.6rem;
+  padding: 1.6rem;
+  flex: 1;
+  align-items: start;
+}
+
+@media (max-width: 840px) {
+  .floor {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- programme rail ---------- */
+
+.programme {
+  border: 2px solid var(--ink);
+  background: var(--sheet);
+  padding: 1.2rem 1.1rem;
+  box-shadow: 4px 4px 0 rgba(33, 27, 20, 0.18);
+  position: sticky;
+  top: 1.2rem;
+}
+
+.programme h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--red);
+  padding-bottom: 0.3rem;
+  margin: 0 0 0.8rem;
+}
+
+.programme h2 + .bill {
+  margin-top: 0;
+}
+
+.programme h2:not(:first-child) {
+  margin-top: 1.6rem;
+}
+
+.bill {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bill li + li {
+  margin-top: 0.45rem;
+}
+
+.act {
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--ink-soft);
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.act:hover {
+  border-color: var(--red);
+  color: var(--red);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 rgba(168, 38, 42, 0.3);
+}
+
+.act.selected {
+  background: var(--ink);
+  color: var(--sheet);
+  border-color: var(--ink);
+}
+
+/* ---------- spice ---------- */
+
+.spice-control input[type='range'] {
+  width: 100%;
+  accent-color: var(--red);
+}
+
+.spice-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.spice-number {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--red);
+}
+
+.spice-label {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.rearrange {
+  margin-top: 1rem;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sheet);
+  background: var(--red);
+  border: 2px solid var(--ink);
+  padding: 0.65rem;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: all 100ms ease;
+}
+
+.rearrange:hover:not(:disabled) {
+  background: var(--red-bright);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.rearrange:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.rearrange:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- fine print metrics ---------- */
+
+.fine-print {
+  margin: 1.4rem 0 0;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 0.25rem;
+}
+
+.fine-print dt {
+  color: var(--ink-soft);
+}
+
+.fine-print dd {
+  margin: 0;
+  text-align: right;
+  color: var(--ink);
+}
+
+/* ---------- the stage (score) ---------- */
+
+.stage {
+  min-width: 0;
+}
+
+.status {
+  font-style: italic;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 3rem 0;
+}
+
+.status.error {
+  color: var(--red);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-style: normal;
+}
+
+.score-sheet {
+  background: var(--sheet);
+  border: 1px solid rgba(33, 27, 20, 0.25);
+  box-shadow:
+    0 1px 2px rgba(33, 27, 20, 0.12),
+    0 8px 28px rgba(33, 27, 20, 0.16);
+  padding: 1.4rem 1.6rem;
+  min-height: 200px;
+}
+
+.score-sheet[data-empty='true'] {
+  display: none;
+}
