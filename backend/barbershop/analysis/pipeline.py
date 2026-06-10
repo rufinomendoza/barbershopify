@@ -28,6 +28,8 @@ class AnalysisResult:
     input: ArrangeInput
     tempo: float
     duration_seconds: float
+    lyrics_source: str = "none"  # asr / neutral / none
+    lyrics_confidence: float = 0.0
 
 
 def _cache_key(path: str) -> str:
@@ -51,6 +53,8 @@ def analyze(
             input=inp,
             tempo=data["tempo"],
             duration_seconds=data["duration_seconds"],
+            lyrics_source=data.get("lyrics_source", "none"),
+            lyrics_confidence=data.get("lyrics_confidence", 0.0),
         )
 
     y, sr = load_audio(path)
@@ -73,12 +77,18 @@ def analyze(
     if not chord_spans:
         raise ValueError("no chords could be estimated from this audio")
 
+    lyrics_source, lyrics_confidence = "none", 0.0
     if lyrics:
         from barbershop.analysis import asr
 
         words = asr.transcribe(path)
-        if not (words and asr.attach_lyrics(melody, words, grid)):
+        if words:
+            lyrics_confidence = asr.mean_confidence(words)
+        if words and asr.attach_lyrics(melody, words, grid):
+            lyrics_source = "asr"
+        else:
             asr.neutral_lyrics(melody)  # honest fallback, never nonsense
+            lyrics_source = "neutral"
 
     inp = ArrangeInput(
         title=title or Path(path).stem,
@@ -89,7 +99,11 @@ def analyze(
         chords=chord_spans,
     )
     result = AnalysisResult(
-        input=inp, tempo=grid.tempo, duration_seconds=len(y) / sr
+        input=inp,
+        tempo=grid.tempo,
+        duration_seconds=len(y) / sr,
+        lyrics_source=lyrics_source,
+        lyrics_confidence=round(lyrics_confidence, 3),
     )
     if use_cache:
         CACHE_DIR.mkdir(exist_ok=True)
@@ -99,6 +113,8 @@ def analyze(
                     "input": inp.model_dump(),
                     "tempo": result.tempo,
                     "duration_seconds": result.duration_seconds,
+                    "lyrics_source": result.lyrics_source,
+                    "lyrics_confidence": result.lyrics_confidence,
                 }
             )
         )

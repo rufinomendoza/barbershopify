@@ -241,6 +241,16 @@ export default function App() {
                   ? 'clean'
                   : `${arrangement.violations.length} violations`}
               </dd>
+              {arrangement.lyrics && arrangement.lyrics.source !== 'none' && (
+                <>
+                  <dt>Lyrics</dt>
+                  <dd>
+                    {arrangement.lyrics.source === 'asr'
+                      ? `heard (${Math.round(arrangement.lyrics.confidence * 100)}% sure)`
+                      : 'doo/dah (transcription unclear)'}
+                  </dd>
+                </>
+              )}
             </dl>
           )}
         </aside>

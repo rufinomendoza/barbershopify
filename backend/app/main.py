@@ -140,7 +140,9 @@ def arrange_test_song(song_id: str, options: ArrangeOptions) -> dict:
     from barbershop.analysis.pipeline import analyze  # heavy import, deferred
 
     result = analyze(str(path), title=_song_title(song_id))
-    return _arrangement_response(result.input, options.spice)
+    response = _arrangement_response(result.input, options.spice)
+    response["lyrics"] = {"source": result.lyrics_source, "confidence": result.lyrics_confidence}
+    return response
 
 
 @app.post("/api/upload")
@@ -163,4 +165,6 @@ async def upload_and_arrange(file: UploadFile, spice: int = 3) -> dict:
             result = analyze(tmp.name, title=Path(file.filename or "Upload").stem)
         except ValueError as err:
             raise HTTPException(status_code=422, detail=str(err)) from err
-    return _arrangement_response(result.input, spice)
+    response = _arrangement_response(result.input, spice)
+    response["lyrics"] = {"source": result.lyrics_source, "confidence": result.lyrics_confidence}
+    return response

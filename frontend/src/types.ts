@@ -65,4 +65,5 @@ export interface Arrangement {
     bass_root_fifth_share: number
     final_chord_ring: boolean
   }
+  lyrics?: { source: 'asr' | 'neutral' | 'none'; confidence: number }
 }
