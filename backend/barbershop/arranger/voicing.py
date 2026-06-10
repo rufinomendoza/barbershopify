@@ -13,7 +13,7 @@ from itertools import permutations
 
 from barbershop.score import KeySig
 from barbershop.texture import Slot
-from barbershop.vocabulary import CHORDS
+from barbershop.vocabulary import CHORDS, chord_pcs
 from barbershop.arranger.config import COMFORT, HARD, RANGES, ArrangerConfig
 
 
@@ -223,11 +223,28 @@ def transition_cost(
         third_pc = (prev_chord.root_pc + next(
             iv for iv, deg in CHORDS[prev_chord.quality].degrees.items() if deg == "third"
         )) % 12
+        next_pcs = chord_pcs(slot.chord.root_pc, slot.chord.quality)
         for name in _TRIO_NAMES:
             delta = after[name] - before[name]
-            if seventh_pc is not None and before[name] % 12 == seventh_pc:
+            # dim7 is fully symmetric: its labeled "7th" is a notational
+            # artifact, and its tones move by step or hold (movement costs
+            # already prefer that). The resolution rule applies to chords
+            # with a functional 7th.
+            if (
+                prev_chord.quality != "dim7"
+                and seventh_pc is not None
+                and before[name] % 12 == seventh_pc
+            ):
                 if not (-2 <= delta <= -1):
-                    cost += HARD  # chordal 7ths resolve down by step
+                    # chordal 7ths resolve down by step — except transferred
+                    # resolution: the lead takes the resolution tone, the
+                    # inner voice moves to another chord tone instead.
+                    targets = {(seventh_pc - 1) % 12, (seventh_pc - 2) % 12} & next_pcs
+                    lead_took = slot.melody_midi % 12 in targets
+                    if lead_took and after[name] % 12 in next_pcs:
+                        cost += cfg.w_frustrated_seventh + (0.5 if delta > 0 else 0.0)
+                    else:
+                        cost += HARD
             if prev_chord.quality in ("dom7", "dom9", "aug7", "dom7b5") and before[name] % 12 == third_pc:
                 # leading tone rises... or drops to the 5th (idiomatic inner-voice exception)
                 if delta not in (1, -4, 0):

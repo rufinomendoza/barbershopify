@@ -46,6 +46,9 @@ class ArrangerConfig:
     w_awkward_interval: float = 3.0  # tritones, sevenths within a part
     w_leading_tone: float = 1.0
     w_common_tone: float = 0.6  # bonus (subtracted) per held common tone
+    # frustrated resolution: lead takes the 7th's resolution tone, inner
+    # voice moves to another chord tone instead (transferred resolution)
+    w_frustrated_seventh: float = 1.5
 
     # --- texture ---
     structural_beats: float = 1.0  # structural-length threshold, in beats

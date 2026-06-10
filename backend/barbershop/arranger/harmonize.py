@@ -38,7 +38,7 @@ class _Candidate:
     quality: str
 
 
-def _static_cost(cand: _Candidate, slot: Slot, cfg: ArrangerConfig) -> float:
+def _static_cost(cand: _Candidate, slot: Slot, cfg: ArrangerConfig, *, forced: bool) -> float:
     inp = slot.chord
     cost = 0.0
     tier = CHORDS[cand.quality].tier
@@ -53,7 +53,10 @@ def _static_cost(cand: _Candidate, slot: Slot, cfg: ArrangerConfig) -> float:
         if cand.quality != inp.quality:
             cost += cfg.w_same_root_upgrade
     else:
-        cost += cfg.w_substitution
+        if not forced:
+            # leaving a viable input chord is a stylistic choice, priced by spice;
+            # when the melody clashes, every candidate is a substitute — no charge
+            cost += cfg.w_substitution
         shared = len(chord_pcs(cand.root_pc, cand.quality) & chord_pcs(inp.root_pc, inp.quality))
         cost += cfg.w_overlap * max(0, 3 - shared)
     return cost
@@ -81,6 +84,7 @@ def _candidates(
         return [(_Candidate(inp.root_pc, inp.quality), 0.0)]
 
     melody_pc = slot.melody_midi % 12
+    forced = melody_pc not in chord_pcs(inp.root_pc, inp.quality)
     allowed = _function_class(inp.quality) if boundary else None
     if final:
         allowed = frozenset({"maj"})  # the last chord must be a major triad
@@ -97,7 +101,7 @@ def _candidates(
     if not cands:  # boundary fallback: melody can't sit on the input root
         return _candidates(slot, cfg, boundary=False)
 
-    scored = [(c, _static_cost(c, slot, cfg)) for c in cands]
+    scored = [(c, _static_cost(c, slot, cfg, forced=forced)) for c in cands]
     scored.sort(key=lambda item: item[1])
     return scored[: cfg.max_chord_candidates]
 

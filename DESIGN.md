@@ -59,6 +59,34 @@ voice). A direct ElementTree serializer is ~hundreds of lines, fully controlled 
 8vb clef, extenders — things music21 can fight you on), imports in milliseconds, and adds zero
 dependencies. music21 stays out of the runtime; MIDI export uses `mido` (a tiny pure-Python dep).
 
+## Two interpretations in the 7th-resolution rule (theory nerds: argue here)
+
+The spec demands "chordal 7ths resolve down by step," enforced as a hard constraint and a
+validator check. Two principled exceptions, both forced by other hard rules:
+
+1. **Transferred resolution.** V7→I with the melody landing on the I's 3rd: barbershop dom7s are
+   complete (no omissions) and 3rds are never doubled, so the inner-voice 7th *cannot* fall by
+   step — the lead owns the resolution tone. Standard practice (and ours): the resolution
+   transfers to the lead; the 7th-voice moves to another chord tone, preferring downward motion.
+   Allowed only when the lead actually sounds the resolution pitch class.
+2. **dim7 has no functional 7th.** A diminished 7th chord is fully symmetric; which tone is "the
+   7th" is an artifact of root spelling (we pick one of four equivalent roots). Enforcing
+   down-by-step on that label created provably unvoiceable progressions (verified by exhaustive
+   search over the voicing lattice). dim7 tones follow the general smoothness costs — step or
+   hold — which is how passing/neighbor diminished chords actually behave. Half-diminished and
+   minor 7ths keep the strict rule; their 7ths are real.
+
+## Demo tunes: certainty over period flavor
+
+The bundled no-audio demos are "Yankee Doodle" (trad.) and "Good Morning to All" (Mildred J.
+Hill, 1893) rather than the spec's example suggestions ("My Wild Irish Rose," "Shine On, Harvest
+Moon") — chosen because I can transcribe these two note-perfectly from memory, and a demo whose
+melody is *wrong* fails the "sounds like barbershop" bar worse than one that's merely older.
+Both are public domain; GMtA is squarely in the right era. A true barbershop-era tune joins in
+Milestone 3 once verified against actual sheet music. The deliberately coarse demo chord inputs
+(one or two per measure) are a feature: the engine's substitutions and dominant chains are the
+demo.
+
 ## Melody extraction defaults to pyin; basic-pitch and demucs are opt-in flags
 
 `librosa.pyin` is pure-Python/numpy, deterministic, and well-suited to the bundled test material
