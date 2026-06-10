@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ScoreView } from './ScoreView'
 import { TransportBar } from './TransportBar'
 import { useStore } from './store'
@@ -12,20 +12,67 @@ const SPICE_LABELS: Record<number, string> = {
 }
 
 const STAGE_COPY: Record<string, string> = {
-  idle: 'Select a number from the programme to begin.',
+  idle: 'Pick a number from the programme, drop a record on the Victrola, or bring your own.',
+  analyzing: 'Listening closely — finding the beat, the key, the tune… (can take ~30s)',
   arranging: 'Arranging four parts…',
   rendering: 'Engraving the score…',
   ready: '',
   error: 'Something went wrong.',
 }
 
+function UploadSlot() {
+  const uploadFile = useStore((s) => s.uploadFile)
+  const [over, setOver] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const onFiles = useCallback(
+    (files: FileList | null) => {
+      const file = files?.[0]
+      if (file) void uploadFile(file)
+    },
+    [uploadFile],
+  )
+
+  return (
+    <div
+      className={over ? 'upload-slot over' : 'upload-slot'}
+      onDragOver={(e) => {
+        e.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setOver(false)
+        onFiles(e.dataTransfer.files)
+      }}
+      onClick={() => inputRef.current?.click()}
+      role="button"
+      tabIndex={0}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".mp3,.m4a,.wav,audio/*"
+        hidden
+        onChange={(e) => onFiles(e.target.files)}
+      />
+      Drop a song here
+      <span className="upload-hint">.mp3 / .m4a / .wav — or click to browse</span>
+    </div>
+  )
+}
+
 export default function App() {
-  const { demos, selectedDemo, spice, stage, error, arrangement } = useStore()
-  const { loadDemos, setSpice, arrange } = useStore()
+  const { demos, testSongs, source, spice, stage, error, arrangement } = useStore()
+  const { loadDemos, setSpice, arrangeSource, rearrange } = useStore()
 
   useEffect(() => {
     void loadDemos()
   }, [loadDemos])
+
+  const isSelected = (kind: string, id: string) =>
+    source !== null && 'id' in source && source.kind === kind && source.id === id
 
   return (
     <div className="hall">
@@ -42,14 +89,29 @@ export default function App() {
             {demos.map((d) => (
               <li key={d.id}>
                 <button
-                  className={d.id === selectedDemo ? 'act selected' : 'act'}
-                  onClick={() => void arrange(d.id)}
+                  className={isSelected('demo', d.id) ? 'act selected' : 'act'}
+                  onClick={() => void arrangeSource({ kind: 'demo', id: d.id })}
                 >
                   {d.title}
                 </button>
               </li>
             ))}
           </ul>
+
+          <h2>Victrola</h2>
+          <ul className="bill">
+            {testSongs.map((s) => (
+              <li key={s.id}>
+                <button
+                  className={isSelected('song', s.id) ? 'act selected' : 'act'}
+                  onClick={() => void arrangeSource({ kind: 'song', id: s.id })}
+                >
+                  {s.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <UploadSlot />
 
           <h2>Spice</h2>
           <div className="spice-control">
@@ -69,8 +131,8 @@ export default function App() {
           </div>
           <button
             className="rearrange"
-            disabled={!selectedDemo || stage === 'arranging'}
-            onClick={() => void arrange()}
+            disabled={!arrangement || stage === 'arranging' || stage === 'analyzing'}
+            onClick={() => void rearrange()}
           >
             Re-arrange
           </button>

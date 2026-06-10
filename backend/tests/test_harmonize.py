@@ -16,6 +16,7 @@ def make_slot(onset, melody_midi, root_pc, quality, *, phrase_end=False, structu
         duration=Q,
         melody_midi=melody_midi,
         melody_max_midi=melody_midi,
+        melody_last_midi=melody_midi,
         melody_attack=True,
         chord=ChordSpan(onset=onset, duration=Q, root_pc=root_pc, quality=quality),
         structural=structural,

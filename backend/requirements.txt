@@ -2,7 +2,7 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.13.0
 audioread==3.1.0
--e git+https://github.com/derekhaase259/barbershopify.git@d1271aa26d96f2ec7ca5e6de02d2798d9c40baa7#egg=barbershopify_backend&subdirectory=backend
+-e git+https://github.com/derekhaase259/barbershopify.git@9ae907d662f33ad36183d3b3ae02bd487d422f47#egg=barbershopify_backend&subdirectory=backend
 certifi==2026.5.20
 cffi==2.0.0
 charset-normalizer==3.4.7
@@ -34,6 +34,7 @@ pydantic_core==2.46.4
 Pygments==2.20.0
 pytest==9.0.3
 python-dotenv==1.2.2
+python-multipart==0.0.32
 PyYAML==6.0.3
 requests==2.34.2
 scikit-learn==1.9.0

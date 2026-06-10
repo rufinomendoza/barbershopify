@@ -87,6 +87,25 @@ Milestone 3 once verified against actual sheet music. The deliberately coarse de
 (one or two per measure) are a feature: the engine's substitutions and dominant chains are the
 demo.
 
+## Octave folding is artifact correction, not melody bending
+
+pyin's classic failure mode is the octave jump. Two defenses: extraction folds notes sitting more
+than a fifth from their local median back toward it in octaves, and `arrange()` folds any note
+that no global transposition could bring inside the Lead's range. Pitch classes — and therefore
+all harmony decisions — are untouched, so this does not violate "melody is sacrosanct"; it
+corrects transcription artifacts the way a human transcriber silently would.
+
+## Residual violations on noisy real-world audio are reported, not hidden
+
+The arranger guarantees a complete chart even when the (noisy, chromatic) extracted melody plus
+the chord chain make some legality constraint locally unsatisfiable — hard constraints become
+10k-cost edges, so Viterbi picks the least-bad chart rather than crashing. On clean inputs (all
+demo tunes, all spice levels, and two of the four bundled 78s) the validator reports zero
+violations; on the noisiest two 78s a handful (≤6) survive at feasibility crunches, and the UI
+shows the count. A joint chord+voicing feasibility pass is planned with the M7 voice-leading
+refinements. The audio pipeline assumes 4/4 in v1 — wrong for waltz-time songs, which simply get
+re-barred, not mis-harmonized; 3/4 detection is a known gap.
+
 ## Melody extraction defaults to pyin; basic-pitch and demucs are opt-in flags
 
 `librosa.pyin` is pure-Python/numpy, deterministic, and well-suited to the bundled test material

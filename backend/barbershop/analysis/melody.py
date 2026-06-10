@@ -41,6 +41,18 @@ def _frames_to_notes(
     return notes
 
 
+def _fold_octave_outliers(notes: list[Note], window: int = 5, tolerance: int = 7) -> None:
+    """pyin's classic failure is the octave jump: fold notes that sit more
+    than a fifth from their local median back toward it, in octaves."""
+    for i, note in enumerate(notes):
+        neighbors = [n.midi for n in notes[max(0, i - window) : i]] or [note.midi]
+        med = float(np.median(neighbors))
+        while note.midi - med > tolerance:
+            note.midi -= 12
+        while med - note.midi > tolerance + 5:  # asymmetric: low notes are rarer errors
+            note.midi += 12
+
+
 def extract(y: np.ndarray, sr: int, grid: BeatGrid, *, fmin: float = 110.0, fmax: float = 1000.0) -> list[Note]:
     import librosa
 
@@ -66,4 +78,5 @@ def extract(y: np.ndarray, sr: int, grid: BeatGrid, *, fmin: float = 110.0, fmax
                 continue
             out[-1].duration = note.onset - out[-1].onset
         out.append(note)
+    _fold_octave_outliers(out)
     return out

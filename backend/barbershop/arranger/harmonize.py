@@ -87,7 +87,16 @@ def _candidates(
     forced = melody_pc not in chord_pcs(inp.root_pc, inp.quality)
     allowed = _function_class(inp.quality) if boundary else None
     if final:
-        allowed = frozenset({"maj"})  # the last chord must be a major triad
+        # the last chord must be a major triad; if the melody can't sit in
+        # one on the input root, try major triads on any root before
+        # surrendering the requirement
+        if (melody_pc - inp.root_pc) % 12 not in CHORDS["maj"].intervals:
+            return [
+                (_Candidate(melody_pc, "maj"), 0.0),  # melody as root
+                (_Candidate((melody_pc - 4) % 12, "maj"), 0.5),  # as third
+                (_Candidate((melody_pc - 7) % 12, "maj"), 0.5),  # as fifth
+            ]
+        allowed = frozenset({"maj"})
     cands: list[_Candidate] = []
     for root in range(12):
         if boundary and root != inp.root_pc:
@@ -95,6 +104,11 @@ def _candidates(
         interval = (melody_pc - root) % 12
         for quality, cdef in CHORDS.items():
             if allowed is not None and quality not in allowed:
+                continue
+            # dom9 is voiced rootless or 5th-omitted, "only when the melody
+            # forces it": with the melody on root or 5th the bass has no
+            # legal tone left, so only offer it for melody on 9th/3rd/7th
+            if quality == "dom9" and interval not in (2, 4, 10):
                 continue
             if interval in cdef.intervals:
                 cands.append(_Candidate(root, quality))

@@ -48,6 +48,7 @@ export interface DemoInfo {
 }
 
 export interface Arrangement {
+  input: unknown // opaque ArrangeInput JSON; lets re-arrange skip analysis
   score: Score
   musicxml: string
   violations: string[]

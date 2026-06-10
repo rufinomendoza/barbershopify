@@ -94,8 +94,10 @@ def candidates(slot: Slot, cfg: ArrangerConfig, *, is_final: bool) -> list[tuple
                 for tenor in _pitches_for(tenor_pc, *RANGES["tenor"]):
                     if tenor < slot.melody_max_midi:
                         continue  # tenor stays above the lead, filigree included
-                    if tenor - slot.melody_midi > 14:
-                        continue  # hopeless spacing
+                    if tenor - slot.melody_midi > 24:
+                        continue  # truly hopeless spacing (cone costs
+                        # handle the merely-wide; a low lead plus the
+                        # tenor's range floor can legitimately force >14)
                     for bari in _pitches_for(bari_pc, *RANGES["bari"]):
                         if not (bass <= bari <= tenor):
                             continue
@@ -190,7 +192,9 @@ def transition_cost(
         or prev_slot.chord.quality != slot.chord.quality
     )
 
-    before = {"tenor": prev.tenor, "lead": prev_slot.melody_midi, "bari": prev.bari, "bass": prev.bass}
+    # the lead's pitch just before the boundary is the LAST note it sang
+    # during the previous slot (filigree included), not the slot's start
+    before = {"tenor": prev.tenor, "lead": prev_slot.melody_last_midi, "bari": prev.bari, "bass": prev.bass}
     after = {"tenor": cur.tenor, "lead": slot.melody_midi, "bari": cur.bari, "bass": cur.bass}
 
     for name in _TRIO_NAMES:

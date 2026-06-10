@@ -42,3 +42,26 @@ def test_render_roundtrip():
 def test_spice_is_validated():
     r = client.post("/api/demos/yankee-doodle/arrange", json={"spice": 9})
     assert r.status_code == 422
+
+
+def test_arrange_response_includes_reusable_input():
+    body = client.post("/api/demos/yankee-doodle/arrange", json={"spice": 2}).json()
+    r = client.post("/api/arrange", json={"input": body["input"], "spice": 4})
+    assert r.status_code == 200
+
+
+def test_list_test_songs():
+    r = client.get("/api/test-songs")
+    assert r.status_code == 200
+    ids = {s["id"] for s in r.json()}
+    assert "sweet-adeline" in ids
+
+
+def test_unknown_test_song_404s():
+    r = client.post("/api/test-songs/not-a-song/arrange", json={"spice": 3})
+    assert r.status_code == 404
+
+
+def test_upload_rejects_unknown_extension():
+    r = client.post("/api/upload", files={"file": ("notes.txt", b"hello", "text/plain")})
+    assert r.status_code == 422

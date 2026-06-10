@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from barbershop.score import ChordSpan, KeySig, Note, Score, TimeSig, VoiceName
 from barbershop.texture import segment
-from barbershop.arranger.config import ArrangerConfig
+from barbershop.arranger.config import RANGES, ArrangerConfig
 from barbershop.arranger.harmonize import harmonize
 from barbershop.arranger.transpose import choose_transposition
 from barbershop.arranger.voicing import voice_slots
@@ -36,6 +36,15 @@ def arrange(inp: ArrangeInput, cfg: ArrangerConfig) -> Score:
     shift, fifths = choose_transposition([n.midi for n in inp.melody], inp.key.fifths)
     key = KeySig(fifths=fifths, mode=inp.key.mode)
     melody = [n.model_copy(update={"midi": n.midi + shift}) for n in inp.melody]
+    # extraction outliers that no global transposition can reach are
+    # folded into range by octaves (artifact correction — see DESIGN.md;
+    # pitch classes, hence harmony, are preserved)
+    lead_lo, lead_hi = RANGES["lead"]
+    for n in melody:
+        while n.midi > lead_hi:
+            n.midi -= 12
+        while n.midi < lead_lo:
+            n.midi += 12
     chords = [
         c.model_copy(update={"root_pc": (c.root_pc + shift) % 12}) for c in inp.chords
     ]

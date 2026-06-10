@@ -54,11 +54,13 @@ def _event_ticks(score: Score) -> list[int]:
     return sorted({n.onset for notes in score.voices.values() for n in notes})
 
 
-def _phrase_final_lead_notes(lead: list[Note]) -> set[int]:
-    """Onsets of lead notes that end a contiguous sung span (repose points)."""
+def _phrase_final_lead_notes(lead: list[Note], threshold: int) -> set[int]:
+    """Onsets of lead notes that end a contiguous sung span AND are of
+    structural length — repose implies sustain; a short trailing ornament
+    is not a point of repose."""
     out = set()
     for i, n in enumerate(lead):
-        if i + 1 == len(lead) or lead[i + 1].onset > n.end:
+        if (i + 1 == len(lead) or lead[i + 1].onset > n.end) and n.duration >= threshold:
             out.add(n.onset)
     return out
 
@@ -86,7 +88,7 @@ def validate(score: Score, threshold: int | None = None) -> list[Violation]:
                 report(n.onset, "range", f"{voice.value} sings midi {n.midi}, range is {lo}..{hi}")
 
     lead_notes = score.voices[VoiceName.lead]
-    repose_onsets = _phrase_final_lead_notes(lead_notes)
+    repose_onsets = _phrase_final_lead_notes(lead_notes, threshold)
     ticks = _event_ticks(score)
 
     verticals: list[tuple[int, dict[VoiceName, Note]]] = []

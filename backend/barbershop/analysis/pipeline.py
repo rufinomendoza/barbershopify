@@ -42,8 +42,11 @@ def analyze(path: str, *, title: str | None = None, use_cache: bool = True) -> A
     cache_file = CACHE_DIR / f"{_cache_key(path)}.json"
     if use_cache and cache_file.exists():
         data = json.loads(cache_file.read_text())
+        inp = ArrangeInput.model_validate(data["input"])
+        if title:
+            inp.title = title  # the cache stores whatever title it was first given
         return AnalysisResult(
-            input=ArrangeInput.model_validate(data["input"]),
+            input=inp,
             tempo=data["tempo"],
             duration_seconds=data["duration_seconds"],
         )

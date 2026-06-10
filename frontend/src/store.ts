@@ -3,7 +3,9 @@ import { api } from './api'
 import { engine, VOICE_ORDER } from './playback/engine'
 import type { Arrangement, DemoInfo, VoiceName } from './types'
 
-export type Stage = 'idle' | 'arranging' | 'rendering' | 'ready' | 'error'
+export type Stage = 'idle' | 'analyzing' | 'arranging' | 'rendering' | 'ready' | 'error'
+
+export type Source = { kind: 'demo' | 'song'; id: string } | { kind: 'upload'; name: string }
 
 export interface VoiceSettings {
   mute: boolean
@@ -18,7 +20,8 @@ const defaultVoiceSettings = (): Record<VoiceName, VoiceSettings> =>
 
 interface AppState {
   demos: DemoInfo[]
-  selectedDemo: string | null
+  testSongs: DemoInfo[]
+  source: Source | null
   spice: number
   stage: Stage
   error: string | null
@@ -31,7 +34,9 @@ interface AppState {
 
   loadDemos: () => Promise<void>
   setSpice: (spice: number) => void
-  arrange: (demoId?: string) => Promise<void>
+  arrangeSource: (source: Source) => Promise<void>
+  rearrange: () => Promise<void>
+  uploadFile: (file: File) => Promise<void>
   setStage: (stage: Stage) => void
 
   play: () => Promise<void>
@@ -49,9 +54,18 @@ export const useStore = create<AppState>((set, get) => {
     onStateChange: (playing) => set({ playing }),
   })
 
+  const finish = (arrangement: Arrangement) => {
+    engine.setScore(arrangement.score)
+    set({ arrangement, stage: 'rendering', tempoBpm: arrangement.score.tempo })
+  }
+
+  const fail = (err: unknown) =>
+    set({ stage: 'error', error: err instanceof Error ? err.message : String(err) })
+
   return {
     demos: [],
-    selectedDemo: null,
+    testSongs: [],
+    source: null,
     spice: 3,
     stage: 'idle',
     error: null,
@@ -63,22 +77,43 @@ export const useStore = create<AppState>((set, get) => {
     voiceSettings: defaultVoiceSettings(),
 
     loadDemos: async () => {
-      const demos = await api.listDemos()
-      set({ demos })
+      const [demos, testSongs] = await Promise.all([api.listDemos(), api.listTestSongs()])
+      set({ demos, testSongs })
     },
 
     setSpice: (spice) => set({ spice }),
 
-    arrange: async (demoId) => {
-      const id = demoId ?? get().selectedDemo
-      if (!id) return
-      set({ selectedDemo: id, stage: 'arranging', error: null })
+    arrangeSource: async (source) => {
+      if (source.kind === 'upload') return
+      set({ source, stage: source.kind === 'song' ? 'analyzing' : 'arranging', error: null })
       try {
-        const arrangement = await api.arrangeDemo(id, get().spice)
-        engine.setScore(arrangement.score)
-        set({ arrangement, stage: 'rendering', tempoBpm: arrangement.score.tempo })
+        const arrangement =
+          source.kind === 'demo'
+            ? await api.arrangeDemo(source.id, get().spice)
+            : await api.arrangeTestSong(source.id, get().spice)
+        finish(arrangement)
       } catch (err) {
-        set({ stage: 'error', error: err instanceof Error ? err.message : String(err) })
+        fail(err)
+      }
+    },
+
+    rearrange: async () => {
+      const input = get().arrangement?.input
+      if (!input) return
+      set({ stage: 'arranging', error: null })
+      try {
+        finish(await api.arrangeInput(input, get().spice))
+      } catch (err) {
+        fail(err)
+      }
+    },
+
+    uploadFile: async (file) => {
+      set({ source: { kind: 'upload', name: file.name }, stage: 'analyzing', error: null })
+      try {
+        finish(await api.upload(file, get().spice))
+      } catch (err) {
+        fail(err)
       }
     },
 
