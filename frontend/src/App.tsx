@@ -3,6 +3,57 @@ import { ScoreView } from './ScoreView'
 import { TransportBar } from './TransportBar'
 import { useStore } from './store'
 
+function PoemPanel() {
+  const stage = useStore((s) => s.stage)
+  const arrangement = useStore((s) => s.arrangement)
+  const composePoem = useStore((s) => s.composePoem)
+  const [text, setText] = useState('')
+  const busy = stage === 'arranging' || stage === 'analyzing'
+  const composed = arrangement?.composition
+
+  return (
+    <div className="lyrics-panel">
+      <h2>From a Poem</h2>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={'No audio needed — paste a poem.\nLine breaks shape the phrases; blank lines split stanzas.'}
+        rows={5}
+      />
+      <button
+        className="rearrange"
+        disabled={!text.trim() || busy}
+        onClick={() => void composePoem(text)}
+      >
+        Compose
+      </button>
+      {composed && (
+        <>
+          <button
+            className="rearrange recompose"
+            disabled={!text.trim() || busy}
+            onClick={() => void composePoem(text, true)}
+          >
+            Re-compose ↻
+          </button>
+          <dl className="fine-print">
+            <dt>Mode</dt>
+            <dd>{composed.mode}</dd>
+            <dt>Foot</dt>
+            <dd>{composed.foot}</dd>
+            <dt>Rhyme</dt>
+            <dd>{composed.schemes.join(' ')}</dd>
+            <dt>Valence / arousal</dt>
+            <dd>
+              {composed.valence} / {composed.arousal}
+            </dd>
+          </dl>
+        </>
+      )}
+    </div>
+  )
+}
+
 function LyricsPanel() {
   const arrangement = useStore((s) => s.arrangement)
   const lyricsFit = useStore((s) => s.lyricsFit)
@@ -188,6 +239,8 @@ export default function App() {
             ))}
           </ul>
           <UploadSlot />
+
+          <PoemPanel />
 
           <h2>Spice</h2>
           <div className="spice-control">

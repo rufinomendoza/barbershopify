@@ -87,6 +87,26 @@ def render(req: RenderRequest) -> dict:
     }
 
 
+class ComposeRequest(BaseModel):
+    text: str
+    spice: int = Field(default=3, ge=1, le=5)
+    seed: int = 0
+    title: str = "From a Poem"
+
+
+@app.post("/api/compose")
+def compose_endpoint(req: ComposeRequest) -> dict:
+    from barbershop.composer.compose import compose
+
+    try:
+        result = compose(req.text, seed=req.seed, title=req.title)
+    except ValueError as err:
+        raise HTTPException(status_code=422, detail=str(err)) from err
+    response = _arrangement_response(result.input, req.spice)
+    response["composition"] = result.meta | {"seed": req.seed}
+    return response
+
+
 class SetLyricsRequest(BaseModel):
     input: ArrangeInput
     text: str

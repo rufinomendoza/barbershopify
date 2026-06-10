@@ -145,10 +145,14 @@ def validate(score: Score, threshold: int | None = None) -> list[Violation]:
         names = list(VoiceName)
         for i, a in enumerate(names):
             for b in names[i + 1:]:
+                if s1[a].end < t2 or s1[b].end < t2:
+                    continue  # a rest broke the linear connection
                 p1a, p1b = s1[a].midi, s1[b].midi
                 p2a, p2b = s2[a].midi, s2[b].midi
                 if p1a == p2a or p1b == p2b:
                     continue  # a voice held or repeated: not parallel motion
+                if (p2a > p1a) != (p2b > p1b):
+                    continue  # contrary motion is not parallel
                 iv1, iv2 = abs(p1a - p1b), abs(p2a - p2b)
                 if iv1 % 12 == 0 and iv2 % 12 == 0:
                     report(t2, "parallels", f"parallel octaves/unisons {a.value}-{b.value}")
@@ -179,6 +183,14 @@ def validate(score: Score, threshold: int | None = None) -> list[Violation]:
             # so the inner voice may take another chord tone instead
             if lead_took and after.midi % 12 in next_pcs:
                 continue
+            # common-tone hold: a predominant 7th may hold its 7th when it
+            # is a tone of the next chord (e.g. ii-half-dim-7 -> i in minor)
+            if (
+                after.midi == before.midi
+                and c1.quality in ("min7", "halfdim7")
+                and seventh in next_pcs
+            ):
+                continue
             report(
                 c2.onset,
                 "seventh-resolution",
@@ -186,12 +198,13 @@ def validate(score: Score, threshold: int | None = None) -> list[Violation]:
                 f"{after.midi - before.midi:+d} (must resolve down by step)",
             )
 
-    # --- final chord: root-position major triad ---
+    # --- final chord: root-position major triad (minor keys may end minor) ---
     if verticals and score.chords:
         t, sounding = verticals[-1]
         final = score.chords[-1]
-        if final.quality != "maj":
-            report(t, "final-chord", f"final chord is {final.quality}, not a major triad")
+        final_ok = ("maj",) if score.key.mode == "major" else ("maj", "min")
+        if final.quality not in final_ok:
+            report(t, "final-chord", f"final chord is {final.quality}, not a stable triad")
         if sounding[VoiceName.bass].midi % 12 != final.root_pc:
             report(t, "final-chord", "final chord not in root position")
 

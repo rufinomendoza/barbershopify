@@ -203,13 +203,13 @@ def transition_cost(
     if not contiguous:
         return cost  # across a rest, only smoothness matters
 
-    # --- forbidden parallels ---
+    # --- forbidden parallels (same-direction motion only) ---
     names = list(before)
     for i, a in enumerate(names):
         for b in names[i + 1:]:
-            moved = before[a] != after[a] and before[b] != after[b]
-            if not moved:
-                continue
+            da, db = after[a] - before[a], after[b] - before[b]
+            if da == 0 or db == 0 or (da > 0) != (db > 0):
+                continue  # oblique or contrary motion is not parallel
             iv1, iv2 = abs(before[a] - before[b]), abs(after[a] - after[b])
             if iv1 % 12 == 0 and iv2 % 12 == 0:
                 cost += HARD  # parallel octaves/unisons, any pair
@@ -241,11 +241,19 @@ def transition_cost(
             ):
                 if not (-2 <= delta <= -1):
                     # chordal 7ths resolve down by step — except transferred
-                    # resolution: the lead takes the resolution tone, the
-                    # inner voice moves to another chord tone instead.
+                    # resolution (the lead takes the resolution tone) and the
+                    # common-tone hold: a predominant 7th (min7/halfdim7)
+                    # whose 7th is a tone of the next chord may simply hold.
                     targets = {(seventh_pc - 1) % 12, (seventh_pc - 2) % 12} & next_pcs
                     lead_took = slot.melody_midi % 12 in targets
-                    if lead_took and after[name] % 12 in next_pcs:
+                    common_hold = (
+                        delta == 0
+                        and prev_chord.quality in ("min7", "halfdim7")
+                        and seventh_pc in next_pcs
+                    )
+                    if common_hold:
+                        pass
+                    elif lead_took and after[name] % 12 in next_pcs:
                         cost += cfg.w_frustrated_seventh + (0.5 if delta > 0 else 0.0)
                     else:
                         cost += HARD

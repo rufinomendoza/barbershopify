@@ -62,7 +62,9 @@ def _static_cost(cand: _Candidate, slot: Slot, cfg: ArrangerConfig, *, forced: b
     return cost
 
 
-def _transition_cost(prev: _Candidate, cur: _Candidate, cfg: ArrangerConfig) -> float:
+def _transition_cost(
+    prev: _Candidate, cur: _Candidate, prev_slot: Slot, slot: Slot, cfg: ArrangerConfig
+) -> float:
     cost = 0.0
     same_chord = prev == cur
     descending_fifth = (prev.root_pc - 7) % 12 == cur.root_pc
@@ -73,11 +75,30 @@ def _transition_cost(prev: _Candidate, cur: _Candidate, cfg: ArrangerConfig) -> 
             cost -= cfg.w_dom_resolve
         else:
             cost += cfg.w_dom_hang
+
+    # parallel-fifth trap: melody on the 5th of two different chords forces
+    # the bass (on the root, the 5th being taken) into parallel motion with
+    # the lead — unescapable on 4-tone chords, which forbid doublings
+    if not same_chord and len(CHORDS[cur.quality].intervals) >= 4:
+        prev_fifth = next(
+            (iv for iv, d in CHORDS[prev.quality].degrees.items() if d == "fifth"), None
+        )
+        cur_fifth = next(
+            (iv for iv, d in CHORDS[cur.quality].degrees.items() if d == "fifth"), None
+        )
+        if (
+            prev_fifth is not None
+            and cur_fifth is not None
+            and slot.melody_midi > prev_slot.melody_last_midi  # bass must chase upward
+            and (prev_slot.melody_midi - prev.root_pc) % 12 == prev_fifth
+            and (slot.melody_midi - cur.root_pc) % 12 == cur_fifth
+        ):
+            cost += 6.0
     return cost
 
 
 def _candidates(
-    slot: Slot, cfg: ArrangerConfig, *, boundary: bool, final: bool = False
+    slot: Slot, cfg: ArrangerConfig, *, boundary: bool, final: bool = False, mode: str = "major"
 ) -> list[tuple[_Candidate, float]]:
     inp = slot.chord
     if not slot.structural:
@@ -87,16 +108,20 @@ def _candidates(
     forced = melody_pc not in chord_pcs(inp.root_pc, inp.quality)
     allowed = _function_class(inp.quality) if boundary else None
     if final:
-        # the last chord must be a major triad; if the melody can't sit in
-        # one on the input root, try major triads on any root before
-        # surrendering the requirement
-        if (melody_pc - inp.root_pc) % 12 not in CHORDS["maj"].intervals:
+        # the last chord must be a stable triad: major always; minor keys
+        # may also end minor (picardy is the composer's choice). If the
+        # melody can't sit in one on the input root, try other roots.
+        final_ok = frozenset({"maj"}) if mode == "major" else frozenset({"maj", "min"})
+        fits_input = any(
+            (melody_pc - inp.root_pc) % 12 in CHORDS[q].intervals for q in final_ok
+        )
+        if not fits_input:
             return [
                 (_Candidate(melody_pc, "maj"), 0.0),  # melody as root
                 (_Candidate((melody_pc - 4) % 12, "maj"), 0.5),  # as third
                 (_Candidate((melody_pc - 7) % 12, "maj"), 0.5),  # as fifth
             ]
-        allowed = frozenset({"maj"})
+        allowed = final_ok
     cands: list[_Candidate] = []
     for root in range(12):
         if boundary and root != inp.root_pc:
@@ -128,7 +153,7 @@ def harmonize(slots: list[Slot], key: KeySig, cfg: ArrangerConfig) -> list[Chord
     for i, slot in enumerate(slots):
         final = i == len(slots) - 1
         boundary = i == 0 or final or slot.phrase_end
-        col = _candidates(slot, cfg, boundary=boundary, final=final)
+        col = _candidates(slot, cfg, boundary=boundary, final=final, mode=key.mode)
         if not col:
             raise ValueError(f"no legal chord for slot at tick {slot.onset}")
         columns.append(col)
@@ -140,7 +165,7 @@ def harmonize(slots: list[Slot], key: KeySig, cfg: ArrangerConfig) -> list[Chord
         for cand, static in columns[i]:
             j_best, c_best = 0, float("inf")
             for j, (prev, _) in enumerate(columns[i - 1]):
-                c = best[j] + _transition_cost(prev, cand, cfg)
+                c = best[j] + _transition_cost(prev, cand, slots[i - 1], slots[i], cfg)
                 if c < c_best:
                     c_best, j_best = c, j
             costs.append(c_best + static)

@@ -77,6 +77,18 @@ def test_set_lyrics_returns_fit_diagnosis():
     assert "rap" in texts
 
 
+def test_compose_endpoint_returns_chart_and_meta():
+    r = client.post(
+        "/api/compose",
+        json={"text": "The morning sun is bright with joy\nwe sing a happy song", "spice": 3, "seed": 5},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["composition"]["mode"] in ("major", "minor")
+    assert body["composition"]["seed"] == 5
+    assert body["score"]["voices"]["lead"]
+
+
 def test_upload_rejects_unknown_extension():
     r = client.post("/api/upload", files={"file": ("notes.txt", b"hello", "text/plain")})
     assert r.status_code == 422

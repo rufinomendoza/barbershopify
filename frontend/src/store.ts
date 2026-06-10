@@ -61,6 +61,7 @@ interface AppState {
   toggleSolo: (voice: VoiceName) => void
   setVolume: (voice: VoiceName, db: number) => void
 
+  composePoem: (text: string, newSeed?: boolean) => Promise<void>
   applyLyrics: (text: string) => Promise<void>
   editSelectedLyric: (text: string) => Promise<void>
   selectNote: (selection: Selection | null) => void
@@ -210,6 +211,18 @@ export const useStore = create<AppState>((set, get) => {
       settings[voice] = { ...settings[voice], volume: db }
       engine.setVolume(voice, db)
       set({ voiceSettings: settings })
+    },
+
+    composePoem: async (text, newSeed = false) => {
+      if (!text.trim()) return
+      const prev = get().arrangement?.composition?.seed ?? 0
+      const seed = newSeed ? prev + 1 : prev
+      set({ source: { kind: 'upload', name: 'poem' }, stage: 'arranging', error: null })
+      try {
+        finish(await api.compose(text, get().spice, seed))
+      } catch (err) {
+        fail(err)
+      }
     },
 
     applyLyrics: async (text) => {

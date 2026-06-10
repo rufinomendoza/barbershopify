@@ -106,6 +106,36 @@ shows the count. A joint chord+voicing feasibility pass is planned with the M7 v
 refinements. The audio pipeline assumes 4/4 in v1 — wrong for waltz-time songs, which simply get
 re-barred, not mis-harmonized; 3/4 detection is a known gap.
 
+## Affect → music mapping (the part to argue about)
+
+Composition mode scores text with a deterministic valence/arousal lexicon (negation-aware,
+offline, testable). The mapping:
+
+- **Valence → mode and color.** Below −0.15 the chart goes minor (A-minor frame; the arranger
+  picks the final singable key), leaning on barbershop's minor palette — ii⌀7→V motion is baked
+  into the closing template. Otherwise major. The *ending stanza's* valence decides the last
+  chord of a minor chart: brightening texts earn a picardy major; unrelieved ones end minor (the
+  validator accepts a minor final only in minor keys).
+- **Arousal → energy.** Tempo = 92 + arousal×36 BPM, clamped to 60–132 (a sad poem lands in the
+  ~63–79 band, an exuberant one ~105–128). Melodic span = 12 + (arousal+1)×2.5 semitones. Above
+  0.25 arousal, closing phrases get cadential acceleration: the dominant bar splits into
+  predominant→dominant halves.
+- **Rhyme → form.** Lines map 1:1 to 4-bar phrases. The second occurrence of a rhyme letter
+  closes its couplet (authentic cadence); first occurrences stay open (half cadence). Rhyming
+  lines answer with the same cadence scale degree. An iambic opening shifts the phrase onto a
+  weak-beat start so stressed syllables land on beats.
+- **Melody.** Eight seeded candidates per phrase, scored for stress–meter concordance, peak near
+  the golden section, leap economy, and chord-tone placement on strong beats; re-compose bumps
+  the seed.
+
+Three counterpoint rulings tightened while testing composed charts, now applied engine-wide:
+parallel fifths/octaves require *same-direction* motion (contrary "anti-parallels" are legal, as
+in the classic ragtime turnaround); a predominant 7th (min7/ii⌀7) may *hold* its 7th into a chord
+containing it (common-tone resolution, e.g. ii⌀7→i); and parallels are not counted across a
+phrase rest (no linear connection). The harmonizer also avoids the "fifth-to-fifth trap" —
+harmonizing a rising melody as the 5th of two consecutive complete 7th chords, which would force
+bass/lead parallels no voicing can escape.
+
 ## Melody extraction defaults to pyin; basic-pitch and demucs are opt-in flags
 
 `librosa.pyin` is pure-Python/numpy, deterministic, and well-suited to the bundled test material

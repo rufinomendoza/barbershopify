@@ -66,4 +66,13 @@ export interface Arrangement {
     final_chord_ring: boolean
   }
   lyrics?: { source: 'asr' | 'neutral' | 'none'; confidence: number }
+  composition?: {
+    mode: 'major' | 'minor'
+    tempo: number
+    foot: string
+    schemes: string[]
+    valence: number
+    arousal: number
+    seed: number
+  }
 }

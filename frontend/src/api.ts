@@ -32,6 +32,8 @@ export const api = {
       body: form,
     })
   },
+  compose: (text: string, spice: number, seed: number) =>
+    request<Arrangement>('/api/compose', post({ text, spice, seed })),
   setLyrics: (input: unknown, text: string, spice: number) =>
     request<Arrangement & { fit: FitEntry[] }>('/api/lyrics/set', post({ input, text, spice })),
   render: (score: Score) =>
