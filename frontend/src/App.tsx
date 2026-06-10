@@ -65,7 +65,8 @@ function UploadSlot() {
 
 export default function App() {
   const { demos, testSongs, source, spice, stage, error, arrangement } = useStore()
-  const { loadDemos, setSpice, arrangeSource, rearrange } = useStore()
+  const { loadDemos, setSpice, arrangeSource, rearrange, downloadMusicXml, downloadMidi } =
+    useStore()
 
   useEffect(() => {
     void loadDemos()
@@ -136,6 +137,17 @@ export default function App() {
           >
             Re-arrange
           </button>
+
+          {arrangement && stage === 'ready' && (
+            <div className="exports">
+              <button className="export-btn" onClick={downloadMusicXml}>
+                ⤓ MusicXML
+              </button>
+              <button className="export-btn" onClick={() => void downloadMidi()}>
+                ⤓ MIDI
+              </button>
+            </div>
+          )}
 
           {arrangement && stage === 'ready' && (
             <dl className="fine-print">

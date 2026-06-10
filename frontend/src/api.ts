@@ -33,5 +33,13 @@ export const api = {
     })
   },
   render: (score: Score) =>
-    request<{ musicxml: string }>('/api/render', post({ score })),
+    request<Pick<Arrangement, 'musicxml' | 'violations' | 'metrics'>>(
+      '/api/render',
+      post({ score }),
+    ),
+  exportMidi: async (score: Score): Promise<Blob> => {
+    const res = await fetch('/api/export/midi', post({ score }))
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+    return res.blob()
+  },
 }

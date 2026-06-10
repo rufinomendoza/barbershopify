@@ -124,6 +124,16 @@ export class PlaybackEngine {
     this.ensureChains()
     this.chains.get(voice)!.channel.volume.value = db
   }
+
+  /** Audible feedback while editing: sound a pitch briefly in a voice's timbre. */
+  async preview(voice: VoiceName, midi: number) {
+    this.ensureChains()
+    if (!this.started) {
+      await Tone.start()
+      this.started = true
+    }
+    this.chains.get(voice)!.synth.triggerAttackRelease(midiToHz(midi), 0.25)
+  }
 }
 
 export const engine = new PlaybackEngine()

@@ -7,12 +7,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from barbershop.arranger.arrange import ArrangeInput, arrange
 from barbershop.arranger.config import ArrangerConfig
 from barbershop.arranger.validate import metrics, validate
 from barbershop.demos import DEMOS
+from barbershop.midi import to_midi
 from barbershop.musicxml import to_musicxml
 from barbershop.score import Score
 
@@ -76,7 +78,22 @@ def arrange_input(req: ArrangeRequest) -> dict:
 
 @app.post("/api/render")
 def render(req: RenderRequest) -> dict:
-    return {"musicxml": to_musicxml(req.score)}
+    """Re-render an (edited) score; legality is re-checked so the UI can
+    tell the user honestly what their edit did to the chart."""
+    return {
+        "musicxml": to_musicxml(req.score),
+        "violations": [str(v) for v in validate(req.score)],
+        "metrics": metrics(req.score),
+    }
+
+
+@app.post("/api/export/midi")
+def export_midi(req: RenderRequest) -> Response:
+    return Response(
+        content=to_midi(req.score),
+        media_type="audio/midi",
+        headers={"Content-Disposition": 'attachment; filename="arrangement.mid"'},
+    )
 
 
 @app.get("/api/test-songs")

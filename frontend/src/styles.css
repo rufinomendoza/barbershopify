@@ -252,6 +252,40 @@ body {
   cursor: default;
 }
 
+/* ---------- exports ---------- */
+
+.exports {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.export-btn {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.45rem 0.3rem;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink-soft);
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+/* ---------- edit hint ---------- */
+
+.edit-hint {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 0 0 0.5rem;
+}
+
 /* ---------- fine print metrics ---------- */
 
 .fine-print {
