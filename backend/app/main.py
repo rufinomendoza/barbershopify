@@ -87,6 +87,32 @@ def render(req: RenderRequest) -> dict:
     }
 
 
+class SetLyricsRequest(BaseModel):
+    input: ArrangeInput
+    text: str
+    spice: int = Field(default=3, ge=1, le=5)
+
+
+@app.post("/api/lyrics/set")
+def set_lyrics_endpoint(req: SetLyricsRequest) -> dict:
+    from barbershop.textset.align import set_lyrics
+
+    melody, reports = set_lyrics(req.input.melody, req.text, req.input.time)
+    inp = req.input.model_copy(update={"melody": melody})
+    response = _arrangement_response(inp, req.spice)
+    response["fit"] = [
+        {
+            "phrase": r.phrase_index + 1,
+            "status": r.status,
+            "syllables": r.syllables,
+            "notes": r.notes,
+            "detail": r.detail,
+        }
+        for r in reports
+    ]
+    return response
+
+
 @app.post("/api/export/midi")
 def export_midi(req: RenderRequest) -> Response:
     return Response(

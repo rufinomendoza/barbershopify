@@ -1,4 +1,4 @@
-import type { Arrangement, DemoInfo, Score } from './types'
+import type { Arrangement, DemoInfo, FitEntry, Score } from './types'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init)
@@ -32,6 +32,8 @@ export const api = {
       body: form,
     })
   },
+  setLyrics: (input: unknown, text: string, spice: number) =>
+    request<Arrangement & { fit: FitEntry[] }>('/api/lyrics/set', post({ input, text, spice })),
   render: (score: Score) =>
     request<Pick<Arrangement, 'musicxml' | 'violations' | 'metrics'>>(
       '/api/render',

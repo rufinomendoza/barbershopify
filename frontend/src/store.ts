@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { api } from './api'
 import { engine, VOICE_ORDER } from './playback/engine'
-import type { Arrangement, DemoInfo, Score, VoiceName } from './types'
+import type { Arrangement, DemoInfo, FitEntry, Score, VoiceName } from './types'
 
 export interface Selection {
   voice: VoiceName
@@ -44,6 +44,7 @@ interface AppState {
   selected: Selection | null
   undoStack: Score[]
   redoStack: Score[]
+  lyricsFit: FitEntry[] | null
 
   loadDemos: () => Promise<void>
   setSpice: (spice: number) => void
@@ -60,6 +61,8 @@ interface AppState {
   toggleSolo: (voice: VoiceName) => void
   setVolume: (voice: VoiceName, db: number) => void
 
+  applyLyrics: (text: string) => Promise<void>
+  editSelectedLyric: (text: string) => Promise<void>
   selectNote: (selection: Selection | null) => void
   nudgePitch: (semitones: number) => Promise<void>
   setDuration: (ticks: number) => Promise<void>
@@ -85,6 +88,7 @@ export const useStore = create<AppState>((set, get) => {
       selected: null,
       undoStack: [],
       redoStack: [],
+      lyricsFit: null,
     })
   }
 
@@ -133,6 +137,7 @@ export const useStore = create<AppState>((set, get) => {
     selected: null,
     undoStack: [],
     redoStack: [],
+    lyricsFit: null,
 
     loadDemos: async () => {
       const [demos, testSongs] = await Promise.all([api.listDemos(), api.listTestSongs()])
@@ -205,6 +210,36 @@ export const useStore = create<AppState>((set, get) => {
       settings[voice] = { ...settings[voice], volume: db }
       engine.setVolume(voice, db)
       set({ voiceSettings: settings })
+    },
+
+    applyLyrics: async (text) => {
+      const arrangement = get().arrangement
+      if (!arrangement || !text.trim()) return
+      set({ stage: 'arranging', error: null })
+      try {
+        const result = await api.setLyrics(arrangement.input, text, get().spice)
+        finish(result)
+        set({ lyricsFit: result.fit })
+      } catch (err) {
+        fail(err)
+      }
+    },
+
+    editSelectedLyric: async (text) => {
+      const arrangement = get().arrangement
+      if (!arrangement) return
+      const next = cloneScore(arrangement.score)
+      const found = selectedNote(next)
+      if (!found) return
+      const note = next.voices[found.sel.voice][found.idx]
+      if (text.trim()) {
+        note.lyric = note.lyric
+          ? { ...note.lyric, text: text.trim() }
+          : { text: text.trim(), syllabic: 'single', extend: false }
+      } else {
+        note.lyric = null
+      }
+      await applyScore(next, true)
     },
 
     selectNote: (selection) => set({ selected: selection }),

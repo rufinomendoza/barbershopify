@@ -62,6 +62,21 @@ def test_unknown_test_song_404s():
     assert r.status_code == 404
 
 
+def test_set_lyrics_returns_fit_diagnosis():
+    body = client.post("/api/demos/yankee-doodle/arrange", json={"spice": 1}).json()
+    r = client.post(
+        "/api/lyrics/set",
+        json={"input": body["input"], "text": "my homemade rap verse goes here tonight", "spice": 1},
+    )
+    assert r.status_code == 200
+    out = r.json()
+    assert out["fit"] and all(f["status"] in ("green", "yellow", "red") for f in out["fit"])
+    # the lead now carries the new words
+    lead = out["score"]["voices"]["lead"]
+    texts = [n["lyric"]["text"] for n in lead if n.get("lyric")]
+    assert "rap" in texts
+
+
 def test_upload_rejects_unknown_extension():
     r = client.post("/api/upload", files={"file": ("notes.txt", b"hello", "text/plain")})
     assert r.status_code == 422

@@ -47,6 +47,14 @@ export interface DemoInfo {
   title: string
 }
 
+export interface FitEntry {
+  phrase: number
+  status: 'green' | 'yellow' | 'red'
+  syllables: number
+  notes: number
+  detail: string
+}
+
 export interface Arrangement {
   input: unknown // opaque ArrangeInput JSON; lets re-arrange skip analysis
   score: Score

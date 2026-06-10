@@ -252,6 +252,77 @@ body {
   cursor: default;
 }
 
+/* ---------- lyrics panel ---------- */
+
+.lyrics-panel {
+  margin-top: 1.4rem;
+}
+
+.lyrics-panel textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  border: 1.5px solid var(--ink-soft);
+  background: var(--sheet);
+  padding: 0.5rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.lyrics-panel .rearrange {
+  margin-top: 0.5rem;
+  background: var(--brass);
+}
+
+.fit-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.fit {
+  padding: 0.25rem 0.4rem;
+  border-left: 4px solid;
+  margin-bottom: 0.25rem;
+}
+
+.fit.green {
+  border-color: #3c7a3c;
+  background: rgba(60, 122, 60, 0.08);
+}
+
+.fit.yellow {
+  border-color: var(--brass);
+  background: rgba(168, 132, 44, 0.1);
+}
+
+.fit.red {
+  border-color: var(--red);
+  background: rgba(168, 38, 42, 0.1);
+}
+
+.syllable-editor {
+  display: block;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+
+.syllable-editor input {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  border: 1.5px solid var(--red);
+  background: var(--sheet);
+  padding: 0.35rem 0.5rem;
+  box-sizing: border-box;
+}
+
 /* ---------- exports ---------- */
 
 .exports {

@@ -102,6 +102,22 @@ def test_spelling_flats_in_flat_context():
     assert pitch.findtext("alter") == "-1"
 
 
+def test_lyric_encoding_syllabic_and_extenders():
+    score = arrange(DEMOS["yankee-doodle"], ArrangerConfig())
+    root = ET.fromstring(to_musicxml(score))
+    lyrics = root.findall("part[@id='P1']/measure/note/lyric")
+    assert lyrics, "lead must carry lyrics"
+    syllabics = [ly.findtext("syllabic") for ly in lyrics]
+    assert "begin" in syllabics and "end" in syllabics and "single" in syllabics
+    texts = [ly.findtext("text") for ly in lyrics]
+    assert texts[:4] == ["yan", "kee", "doo", "dle"]
+
+    gmta = arrange(DEMOS["good-morning-to-all"], ArrangerConfig())
+    root = ET.fromstring(to_musicxml(gmta))
+    extends = root.findall("part[@id='P1']/measure/note/lyric/extend")
+    assert extends, "melismas must carry extender lines"
+
+
 def test_tempo_direction_present():
     score = arrange(DEMOS["yankee-doodle"], ArrangerConfig())
     root = ET.fromstring(to_musicxml(score))

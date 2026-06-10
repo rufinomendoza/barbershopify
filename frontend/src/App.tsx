@@ -3,6 +3,81 @@ import { ScoreView } from './ScoreView'
 import { TransportBar } from './TransportBar'
 import { useStore } from './store'
 
+function LyricsPanel() {
+  const arrangement = useStore((s) => s.arrangement)
+  const lyricsFit = useStore((s) => s.lyricsFit)
+  const stage = useStore((s) => s.stage)
+  const applyLyrics = useStore((s) => s.applyLyrics)
+  const [text, setText] = useState('')
+
+  if (!arrangement) return null
+  return (
+    <div className="lyrics-panel">
+      <h2>Lyrics</h2>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={'Paste lyrics here — one line per musical phrase.\nLine breaks matter: they are how phrases are matched.'}
+        rows={5}
+      />
+      <button
+        className="rearrange"
+        disabled={!text.trim() || stage !== 'ready'}
+        onClick={() => void applyLyrics(text)}
+      >
+        Set lyrics
+      </button>
+      {lyricsFit && (
+        <ul className="fit-list">
+          {lyricsFit.map((f) => (
+            <li key={f.phrase} className={`fit ${f.status}`} title={f.detail}>
+              phrase {f.phrase}: {f.detail}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function SelectedLyricEditor() {
+  const selected = useStore((s) => s.selected)
+  const arrangement = useStore((s) => s.arrangement)
+  const editSelectedLyric = useStore((s) => s.editSelectedLyric)
+  const note =
+    selected && arrangement
+      ? arrangement.score.voices[selected.voice].find((n) => n.onset === selected.onset)
+      : null
+  const [draft, setDraft] = useState<string | null>(null)
+
+  useEffect(() => setDraft(null), [selected])
+  if (!selected || !note || selected.voice !== 'lead') return null
+  const value = draft ?? note.lyric?.text ?? ''
+  return (
+    <label className="syllable-editor">
+      Syllable under selected note
+      <input
+        value={value}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            void editSelectedLyric(value)
+            setDraft(null)
+          }
+        }}
+        onBlur={() => {
+          if (draft !== null && draft !== (note.lyric?.text ?? '')) {
+            void editSelectedLyric(draft)
+          }
+          setDraft(null)
+        }}
+        placeholder="(no syllable)"
+      />
+    </label>
+  )
+}
+
 const SPICE_LABELS: Record<number, string> = {
   1: 'faithful',
   2: 'gentle',
@@ -137,6 +212,9 @@ export default function App() {
           >
             Re-arrange
           </button>
+
+          <LyricsPanel />
+          <SelectedLyricEditor />
 
           {arrangement && stage === 'ready' && (
             <div className="exports">

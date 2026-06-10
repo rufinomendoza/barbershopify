@@ -38,8 +38,10 @@ def _cache_key(path: str) -> str:
     return h.hexdigest()[:32]
 
 
-def analyze(path: str, *, title: str | None = None, use_cache: bool = True) -> AnalysisResult:
-    cache_file = CACHE_DIR / f"{_cache_key(path)}.json"
+def analyze(
+    path: str, *, title: str | None = None, use_cache: bool = True, lyrics: bool = True
+) -> AnalysisResult:
+    cache_file = CACHE_DIR / f"{_cache_key(path)}-v2.json"
     if use_cache and cache_file.exists():
         data = json.loads(cache_file.read_text())
         inp = ArrangeInput.model_validate(data["input"])
@@ -70,6 +72,13 @@ def analyze(path: str, *, title: str | None = None, use_cache: bool = True) -> A
         raise ValueError("no melody could be extracted from this audio")
     if not chord_spans:
         raise ValueError("no chords could be estimated from this audio")
+
+    if lyrics:
+        from barbershop.analysis import asr
+
+        words = asr.transcribe(path)
+        if not (words and asr.attach_lyrics(melody, words, grid)):
+            asr.neutral_lyrics(melody)  # honest fallback, never nonsense
 
     inp = ArrangeInput(
         title=title or Path(path).stem,
