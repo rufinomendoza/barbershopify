@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.local
+
+# User data & caches (uploaded audio, analysis artifacts, model weights)
+backend/uploads/
+backend/cache/
+*.demucs/
+basic_pitch_weights/
+.torch/
+.cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Env
+.env
+.env.*
