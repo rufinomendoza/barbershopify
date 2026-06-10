@@ -246,6 +246,118 @@ body {
   color: var(--ink);
 }
 
+/* ---------- transport & mixer ---------- */
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--ink);
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 4px 4px 0 rgba(33, 27, 20, 0.18);
+}
+
+.transport-buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.transport-btn {
+  font-size: 1rem;
+  line-height: 1;
+  width: 2.4rem;
+  height: 2.4rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--paper-deep);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.transport-btn:hover {
+  background: var(--red-bright);
+  color: var(--sheet);
+}
+
+.tempo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tempo-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  min-width: 4.5rem;
+}
+
+.tempo input[type='range'] {
+  width: 110px;
+  accent-color: var(--red-bright);
+}
+
+.mixer {
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.strip-name {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.strip-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  width: 1.5rem;
+  height: 1.4rem;
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid var(--paper-deep);
+  cursor: pointer;
+}
+
+.chip.active {
+  background: var(--red-bright);
+  border-color: var(--red-bright);
+}
+
+.chip.active.solo {
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
+.strip input[type='range'] {
+  width: 70px;
+  accent-color: var(--brass);
+}
+
+/* OSMD playback cursor tint */
+img#cursorImg-0 {
+  filter: hue-rotate(140deg) saturate(2);
+}
+
 /* ---------- the stage (score) ---------- */
 
 .stage {

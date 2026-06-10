@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ScoreView } from './ScoreView'
+import { TransportBar } from './TransportBar'
 import { useStore } from './store'
 
 const SPICE_LABELS: Record<number, string> = {
@@ -98,6 +99,7 @@ export default function App() {
               {stage === 'error' && error ? `${STAGE_COPY.error} ${error}` : STAGE_COPY[stage]}
             </p>
           )}
+          <TransportBar />
           <ScoreView />
         </main>
       </div>
