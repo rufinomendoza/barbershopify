@@ -136,6 +136,29 @@ phrase rest (no linear connection). The harmonizer also avoids the "fifth-to-fif
 harmonizing a rising melody as the 5th of two consecutive complete 7th chords, which would force
 bass/lead parallels no voicing can escape.
 
+## Embellishments reuse the legality machinery (and what's not built yet)
+
+Swipes and tags are not bolted onto a finished score; they are *harmonic-rhythm subdivisions*
+created before harmonization. A sustained slot splits in two (the swipe lands on the last beat),
+the new sub-slot carries a "prefer to move" nudge, and the ordinary harmonize→voice pipeline does
+the rest — so every swipe is vocabulary-legal and voice-led by construction. The tag is the same
+idea writ large: at spice ≥3 the lead's final note extends two measures (the only sanctioned
+rhythm change to the melody — pitch untouched) and the trio walks in half-measure swipe steps,
+settling on the enforced root-position final triad. The walk's chords aren't scripted; they
+emerge from circle-of-fifths rewards under the melody-containment constraint, which is why a
+root-post yields II7/♭VI7 colors while a fifth-post walks differently.
+
+Building the tag surfaced the general fix promised earlier: the harmonizer now rejects (at
+near-hard cost) any chord transition whose 7th has no continuation — no step-down target in the
+next chord, no common-tone hold, no lead transfer. That joint chord/voicing feasibility check
+cleaned 3 of the 4 noisy test 78s completely (the fourth keeps a single honestly-reported
+violation).
+
+**Not yet implemented** (documented rather than half-done): key changes (needs mid-score key
+signatures in the model and serializer), bell chords, and echo embellishments (both spice ≥4).
+The ring metric also treats only major finals as "ringing," so minor-key composed charts report
+`final_chord_ring: no` — cosmetic, but worth knowing.
+
 ## Melody extraction defaults to pyin; basic-pitch and demucs are opt-in flags
 
 `librosa.pyin` is pure-Python/numpy, deterministic, and well-suited to the bundled test material
