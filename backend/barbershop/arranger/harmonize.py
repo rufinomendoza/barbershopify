@@ -17,6 +17,20 @@ from barbershop.arranger.config import ArrangerConfig
 
 _DOM_FAMILY = ("dom7", "dom9", "aug7", "dom7b5")
 
+# function classes: at phrase boundaries a substitution must keep the
+# input chord's function (tonic/stable vs dominant vs diminished)
+_STABLE = frozenset({"maj", "maj6", "min", "min6", "min7"})
+_DOMINANT = frozenset(_DOM_FAMILY) | {"aug"}
+_DIMINISHED = frozenset({"dim7", "halfdim7"})
+
+
+def _function_class(quality: str) -> frozenset[str]:
+    if quality in _DOMINANT:
+        return _DOMINANT | {"maj"}  # a dominant may relax to its plain triad
+    if quality in _DIMINISHED:
+        return _DIMINISHED
+    return _STABLE
+
 
 @dataclass(frozen=True)
 class _Candidate:
@@ -59,18 +73,25 @@ def _transition_cost(prev: _Candidate, cur: _Candidate, cfg: ArrangerConfig) -> 
     return cost
 
 
-def _candidates(slot: Slot, cfg: ArrangerConfig, *, boundary: bool) -> list[tuple[_Candidate, float]]:
+def _candidates(
+    slot: Slot, cfg: ArrangerConfig, *, boundary: bool, final: bool = False
+) -> list[tuple[_Candidate, float]]:
     inp = slot.chord
     if not slot.structural:
         return [(_Candidate(inp.root_pc, inp.quality), 0.0)]
 
     melody_pc = slot.melody_midi % 12
+    allowed = _function_class(inp.quality) if boundary else None
+    if final:
+        allowed = frozenset({"maj"})  # the last chord must be a major triad
     cands: list[_Candidate] = []
     for root in range(12):
         if boundary and root != inp.root_pc:
             continue  # keep the skeleton's function at phrase boundaries
         interval = (melody_pc - root) % 12
         for quality, cdef in CHORDS.items():
+            if allowed is not None and quality not in allowed:
+                continue
             if interval in cdef.intervals:
                 cands.append(_Candidate(root, quality))
     if not cands:  # boundary fallback: melody can't sit on the input root
@@ -87,8 +108,9 @@ def harmonize(slots: list[Slot], key: KeySig, cfg: ArrangerConfig) -> list[Chord
         return []
     columns = []
     for i, slot in enumerate(slots):
-        boundary = i == 0 or i == len(slots) - 1 or slot.phrase_end
-        col = _candidates(slot, cfg, boundary=boundary)
+        final = i == len(slots) - 1
+        boundary = i == 0 or final or slot.phrase_end
+        col = _candidates(slot, cfg, boundary=boundary, final=final)
         if not col:
             raise ValueError(f"no legal chord for slot at tick {slot.onset}")
         columns.append(col)
