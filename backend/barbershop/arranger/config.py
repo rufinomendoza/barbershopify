@@ -52,3 +52,27 @@ class ArrangerConfig:
 
     # cap on voicing candidates per slot (keeps Viterbi fast)
     max_candidates: int = 48
+
+    # --- harmonization weights (several scale with spice) ---
+    w_tier2: float = 0.5  # static penalty for tier-2 color
+    w_overlap: float = 0.8  # per pitch class not shared with the input chord
+    w_dom_bias: float = -0.5  # static bonus for dominant-7th-family chords
+    w_circle: float = 1.5  # transition reward for descending-fifth root motion
+    w_dom_resolve: float = 1.5  # extra reward when a dominant resolves down a fifth
+    w_dom_hang: float = 2.5  # penalty when a dominant doesn't resolve
+    max_chord_candidates: int = 24
+
+    @property
+    def w_substitution(self) -> float:
+        """Cost of leaving the input chord's root; falls as spice rises."""
+        return {1: 8.0, 2: 5.0, 3: 3.0, 4: 2.0, 5: 1.2}[self.spice]
+
+    @property
+    def w_same_root_upgrade(self) -> float:
+        """Cost of recoloring on the same root (e.g. V -> V7)."""
+        return {1: 1.2, 2: 1.0, 3: 0.8, 4: 0.5, 5: 0.3}[self.spice]
+
+    @property
+    def w_tier3(self) -> float:
+        """Tier-3 spice chords are gated hard at low spice."""
+        return {1: 50.0, 2: 50.0, 3: 6.0, 4: 3.0, 5: 1.5}[self.spice]
