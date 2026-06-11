@@ -96,7 +96,9 @@ cd frontend && npm run dev
 | `ffmpeg: command not found` or upload fails instantly | Install ffmpeg (table above), restart `make dev`. |
 | `python3.12: not found` / venv errors | You're on an older Python. Install 3.12 and rerun `make setup`. |
 | Port already in use (8731 or 5173) | Something else is using it. `make dev BACKEND_PORT=8732` and edit the port in `frontend/vite.config.ts` to match — or stop the other program. Vite picks 5174 by itself if 5173 is busy; use the URL it prints. |
-| First Victrola song takes forever | The speech-recognition model (~150 MB) downloads on first use. It's a one-time cost; later songs are much faster. |
+| First Victrola song or upload takes forever | The speech-recognition model (~150 MB) downloads on first use. It's a one-time cost; later songs are much faster. |
+| "You are sending unauthenticated requests to the HF Hub" | Harmless. That's the speech model downloading from Hugging Face; anonymous downloads are fine. It only happens once. |
+| Upload fails with "no melody could be extracted" | Dense modern mixes (heavy drums, thick production) can defeat the melody tracker. Songs with a clear, prominent melody — like the bundled 78s — work best. |
 | Page loads but charts never appear | The backend probably isn't running — look for errors in the `make dev` terminal. |
 | No sound | Click somewhere on the page first (browsers block audio until you interact), and check the per-voice mute buttons. |
 

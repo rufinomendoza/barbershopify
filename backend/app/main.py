@@ -1,7 +1,9 @@
 """FastAPI layer: a thin, stateless web wrapper around the music package."""
 from __future__ import annotations
 
+import os
 import re
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -166,7 +168,10 @@ def arrange_test_song(song_id: str, options: ArrangeOptions) -> dict:
 
 
 @app.post("/api/upload")
-async def upload_and_arrange(file: UploadFile, spice: int = 3) -> dict:
+def upload_and_arrange(file: UploadFile, spice: int = 3) -> dict:
+    """Synchronous on purpose: FastAPI runs it in a worker thread, so the
+    minutes-long analysis (and the first-run whisper download) can't freeze
+    the event loop for every other request."""
     suffix = Path(file.filename or "upload").suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
         raise HTTPException(
@@ -177,14 +182,19 @@ async def upload_and_arrange(file: UploadFile, spice: int = 3) -> dict:
         raise HTTPException(status_code=422, detail="spice must be 1-5")
     from barbershop.analysis.pipeline import analyze  # heavy import, deferred
 
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp:
-        while chunk := await file.read(1 << 20):
-            tmp.write(chunk)
-        tmp.flush()
+    # delete=False + explicit unlink: on Windows an open NamedTemporaryFile
+    # cannot be reopened by name, so ffmpeg could never read it
+    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    try:
+        shutil.copyfileobj(file.file, tmp)
+        tmp.close()
         try:
             result = analyze(tmp.name, title=Path(file.filename or "Upload").stem)
         except ValueError as err:
             raise HTTPException(status_code=422, detail=str(err)) from err
+    finally:
+        tmp.close()
+        os.unlink(tmp.name)
     response = _arrangement_response(result.input, spice)
     response["lyrics"] = {"source": result.lyrics_source, "confidence": result.lyrics_confidence}
     return response

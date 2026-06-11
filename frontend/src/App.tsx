@@ -139,7 +139,8 @@ const SPICE_LABELS: Record<number, string> = {
 
 const STAGE_COPY: Record<string, string> = {
   idle: 'Pick a number from the programme, drop a record on the Victrola, or bring your own.',
-  analyzing: 'Listening closely — finding the beat, the key, the tune… (can take ~30s)',
+  analyzing:
+    'Listening closely — finding the beat, the key, the tune… (~30s; the very first analysis also downloads a ~150 MB speech model, which can take a few minutes)',
   arranging: 'Arranging four parts…',
   rendering: 'Engraving the score…',
   ready: '',
