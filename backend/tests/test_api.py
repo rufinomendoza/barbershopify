@@ -92,3 +92,35 @@ def test_compose_endpoint_returns_chart_and_meta():
 def test_upload_rejects_unknown_extension():
     r = client.post("/api/upload", files={"file": ("notes.txt", b"hello", "text/plain")})
     assert r.status_code == 422
+
+
+def test_upload_happy_path(monkeypatch, tmp_path):
+    """A real WAV through the real multipart endpoint (ASR stubbed out so
+    the test never loads the whisper model — exercising the doo/dah path)."""
+    import numpy as np
+    import soundfile as sf
+
+    from barbershop.analysis import asr
+
+    monkeypatch.setattr(asr, "transcribe", lambda path: None)
+
+    sr, beat = 22050, 0.5
+    melody = [60, 62, 64, 65, 67, 64, 60, 62]
+    y = np.zeros(int(sr * beat * len(melody)))
+    for i, m in enumerate(melody):
+        t = np.linspace(0, beat, int(sr * beat), endpoint=False)
+        f = 440 * 2 ** ((m - 69) / 12)
+        seg = 0.5 * np.sin(2 * np.pi * f * t) * np.minimum(1, np.minimum(t / 0.01, (beat - t) / 0.02))
+        y[int(i * beat * sr) : int(i * beat * sr) + len(seg)] += seg
+        y[int(i * beat * sr) : int(i * beat * sr) + 200] += np.linspace(0.4, 0, 200)  # click
+    path = tmp_path / "tiny.wav"
+    sf.write(path, y.astype(np.float32), sr)
+
+    with open(path, "rb") as f:
+        r = client.post(
+            "/api/upload?spice=2", files={"file": ("tiny.wav", f, "audio/wav")}
+        )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["score"]["voices"]["lead"]
+    assert body["lyrics"]["source"] == "neutral"  # graceful doo/dah fallback
